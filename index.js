@@ -5,6 +5,7 @@ const io = require("socket.io")(httpServer, {
   cors: {
     origin: "http://localhost:3000",
   },
+  path: "/ws",
 });
 const { v4: uuid } = require("uuid");
 

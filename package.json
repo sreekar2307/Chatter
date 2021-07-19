@@ -2,7 +2,7 @@
   "name": "dashire",
   "version": "1.0.0",
   "main": "index.js",
-  "author": "SreekarReddyBollam <bollam.sreekar@byjus.com>",
+  "author": "Sreekar Reddy",
   "license": "MIT",
   "scripts": {
     "start": "node index.js"

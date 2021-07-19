@@ -5,6 +5,7 @@ export default io(URL, {
   transports: ["websocket"],
   upgrade: false,
   autoConnect: false,
+  path: "/ws",
 });
 
 // export function userListeners(socket) {

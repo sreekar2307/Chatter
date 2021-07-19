@@ -1,0 +1,19 @@
+version: '3'
+services:
+  nginx:
+    build: nginx
+    container_name: nginx
+    volumes:
+      - "./front-end/build:/usr/share/nginx/html/"
+    ports:
+      - 80:80
+    depends_on:
+      - server
+  server:
+    build:
+      context: .
+    container_name: server
+    volumes:
+      - .:/app
+    ports:
+      - "4000:4000"
