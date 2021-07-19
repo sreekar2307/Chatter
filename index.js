@@ -40,6 +40,10 @@ io.on("connection", (socket) => {
   socket.join(socket.session.userID);
   socket.emit("session", socket.session.userID, socket.session);
 
+  messageStore.getMessagesTo(socket.session.userID).forEach((message)  => {
+    socket.to(message.from).emit("delivered", message);
+  })
+
   socket.on("users", (callback) => {
     callback(sessionStore.findAllSessions());
   });

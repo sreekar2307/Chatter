@@ -24,13 +24,25 @@ module.exports = class MessageStore {
     return this.messages[id];
   }
 
+  getMessagesTo(to){
+    const messages = []
+    const time = Date.now();
+    Object.entries(this.messages).forEach(([key, value]) => {
+      if (value["to"] === to){
+        value.delivered = time;
+        this.messages[key] = value;
+        messages.push(this.messages[key])
+      }
+    })
+    return messages
+  }
+
   getMessages(from, to) {
     const time = Date.now();
     const messages = [];
     Object.entries(this.messages).forEach(([key, value]) => {
       if (value["from"] === to && value["to"] === from) {
         value.seen = value.seen || time;
-        value.delivered = value.delivered || time;
         this.messages[key] = {
           ...value,
         };

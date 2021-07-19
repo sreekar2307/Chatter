@@ -46,15 +46,36 @@ export default function Friends() {
   const classes = useStyles();
   const [friends, setFriends] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [selectedFriend, setSelectedFriend] = useState(-1);
+  const [selectedFriend, setSelectedFriend] = useState(null);
   const [message, setMessage] = useState("");
   const user = useContext(UserContext)[0];
 
   useEffect(() => {
     socket.emit("users", (resp) => {
-      setFriends(resp.filter((res) => res.userID !== user.userID));
+      const friends = resp.filter((res) => res.userID !== user.userID);
+      setFriends(friends)
+      if(friends.length > 0 ) setSelectedFriend(friends[0])
     });
+  }, []);
 
+
+  useEffect(() => {
+    if(selectedFriend !== null) {
+      socket.emit("messages", user.userID, selectedFriend.userID, (resp) => {
+        const newMessages = messages.map(message => ({...message, active: false}))
+        resp.forEach(value => {
+          const position = newMessages.findIndex(message => message.id === value.id)
+          if(position !== -1){
+            newMessages.splice(position, 1)
+          }
+          newMessages.push({...value, active: true})
+        });
+        setMessages(newMessages)
+      });
+    }
+  }, [selectedFriend, setSelectedFriend])
+
+  useEffect(() => {
     const userConnectedHandler = (newUser) => {
       const existing = friends.findIndex(
         (friend) => friend.userID === newUser.userID
@@ -78,21 +99,20 @@ export default function Friends() {
     };
 
     const privateMessageHandler = (content) => {
-      const seen = content.to === user.userID;
+      const seen = selectedFriend && content.from === selectedFriend.userID;
       socket.emit("message received", content.id, seen, (message) => {
-        const newMessages = [...messages, message];
-        setMessages(newMessages);
+        setMessages([...messages, {...message, active: seen}])
       });
     };
 
     const messageDeliveredHandler = (content) => {
-      const newMessages = messages.map((message) => {
+      setMessages(messages.map((message) => {
         if (message.id === content.id) {
-          return content;
+          const seen = selectedFriend && content.to === selectedFriend.userID;
+          return {...content, active: seen};
         }
         return message;
-      });
-      setMessages(newMessages);
+      }))
     };
 
     socket.on("user connected", userConnectedHandler);
@@ -108,14 +128,8 @@ export default function Friends() {
     };
   });
 
-  const handleOnSelect = (userID) => {
-    setSelectedFriend(friends.findIndex((friend) => friend.userID === userID));
-    socket.emit("messages", user.userID, userID, (resp) => {
-      setMessages(Object.values(resp));
-    });
-  };
   const handleSendMessage = () => {
-    const toUser = friends[selectedFriend];
+    const toUser = selectedFriend;
     setMessage("");
     socket.emit(
       "private message",
@@ -125,12 +139,13 @@ export default function Friends() {
         text: message,
       },
       (resp) => {
-        setMessages([...messages, resp]);
+        const seen = selectedFriend && resp.to === selectedFriend.userID;
+        setMessages([...messages, {...resp, active: seen}]);
       }
     );
   };
 
-  const messagesBody = messages.map((message, index) => (
+  const messagesBody = messages.filter(message => message.active).map((message, index) => (
     <Message
       to={message.to}
       from={message.from}
@@ -138,15 +153,6 @@ export default function Friends() {
       seen={message.seen}
       text={message.text}
       key={`message-${index}`}
-      style={
-        selectedFriend !== -1 &&
-        ((message.to === friends[selectedFriend].userID &&
-          message.from === user.userID) ||
-          (message.from === friends[selectedFriend].userID &&
-            message.to === user.userID))
-          ? { display: "block" }
-          : { display: "none" }
-      }
     >
       {message.text}
     </Message>
@@ -161,8 +167,8 @@ export default function Friends() {
               username={friend.username}
               userID={friend.userID}
               active={friend.active}
-              selectedUser={handleOnSelect}
-              selected={index === selectedFriend}
+              selectedUser={()=> setSelectedFriend(friend)}
+              selected={selectedFriend && friend.userID === selectedFriend.userID}
             />
           </List>
         ))}
@@ -204,9 +210,9 @@ export default function Friends() {
   );
 }
 
-function Friend({ userID, username, active, selectedUser, selected }) {
+function Friend({ username, active, selectedUser, selected }) {
   return (
-    <ListItem button onClick={() => selectedUser(userID)} selected={selected}>
+    <ListItem button onClick={selectedUser} selected={selected}>
       <ListItemIcon>
         <Tooltip title={active ? "online" : "offline"}>
           <Badge
@@ -240,14 +246,14 @@ function Message({ text, from, to, delivered, seen }) {
   if (delivered && seen) {
     statusIcon = <DoneAllIcon color="primary" />;
   } else if (delivered) {
-    statusIcon = <DoneAllIcon color="inherit" />;
+    statusIcon = <DoneAllIcon color="default" />;
   }
   return (
     <Card style={{ position: "relative" }}>
       <CardHeader subheader={user.userID === from ? "You:" : "Friend:"} />
       <CardContent>
         {text}
-        <div style={{ position: "absolute", right: 10 }}>{statusIcon}</div>
+        {from === user.userID && <div style={{ position: "absolute", right: 10 }}>{statusIcon}</div>}
       </CardContent>
     </Card>
   );

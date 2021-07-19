@@ -5,7 +5,7 @@
   "author": "Sreekar Reddy",
   "license": "MIT",
   "scripts": {
-    "start": "DEBUG=socket* node index.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "prettier": "^2.3.2",
