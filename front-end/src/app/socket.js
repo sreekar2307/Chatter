@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const URL = "http://ec2-52-66-160-163.ap-south-1.compute.amazonaws.com:80/ws";
+const URL = "http://ec2-52-66-160-163.ap-south-1.compute.amazonaws.com";
 export default io(URL, {
   transports: ["websocket"],
   upgrade: false,
