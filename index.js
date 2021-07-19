@@ -3,7 +3,7 @@ const MessageStore = require("./message-store");
 const httpServer = require("http").createServer();
 const io = require("socket.io")(httpServer, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "http://ec2-52-66-160-163.ap-south-1.compute.amazonaws.com:80",
   },
   path: "/ws",
 });
